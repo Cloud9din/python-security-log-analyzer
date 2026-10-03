@@ -369,10 +369,6 @@ Details: Multiple ports scanned
 
 ### Security Analyzer Running in VS Code
 
-## 📸 Screenshot
-
-### Security Analyzer Output
-
 ![Python Security Log Analyzer](security-analyzer-output.png)
 ---
 
