@@ -12,46 +12,46 @@ Errors: 5
 
 MOST ACTIVE IP ADDRESSES
 ------------------------------------------------------------
-203.0.113.25: 5 events
-198.51.100.91: 4 events
-198.51.100.44: 3 events
-198.51.100.75: 3 events
-203.0.113.80: 3 events
+EXTERNAL-A: 5 events
+EXTERNAL-E: 4 events
+EXTERNAL-B: 3 events
+EXTERNAL-C: 3 events
+EXTERNAL-D: 3 events
 
 SECURITY ALERTS
 ------------------------------------------------------------
 
 Severity: HIGH
 Alert: Repeated Failed Logins
-IP Address: 203.0.113.25
+IP Address: EXTERNAL-A
 Details: 5 failed login attempts detected
 
 Severity: HIGH
 Alert: Repeated Failed Logins
-IP Address: 198.51.100.75
+IP Address: EXTERNAL-C
 Details: 3 failed login attempts detected
 
 Severity: HIGH
 Alert: Repeated Failed Logins
-IP Address: 198.51.100.91
+IP Address: EXTERNAL-E
 Details: 4 failed login attempts detected
 
 Severity: MEDIUM
 Alert: Repeated Access Denied
-IP Address: 198.51.100.44
+IP Address: EXTERNAL-B
 Details: 3 access denied events detected
 
 Severity: CRITICAL
 Alert: Malware Alert
-IP Address: 192.168.1.55
+IP Address: INTERNAL-E
 Details: Suspicious file: suspicious.exe
 
 Severity: HIGH
 Alert: Port Scan
-IP Address: 203.0.113.110
+IP Address: EXTERNAL-F
 Details: Ports scanned: 22,80,443,3389
 
 Severity: HIGH
 Alert: Port Scan
-IP Address: 203.0.113.110
+IP Address: EXTERNAL-F
 Details: Ports scanned: 21,23,25,445
