@@ -18,6 +18,7 @@ REPORT_FILE = REPORT_DIR / "security_report.txt"
 # --------------------------------------------------
 
 FAILED_LOGIN_THRESHOLD = 3
+ACCESS_DENIED_THRESHOLD = 3
 
 
 # --------------------------------------------------
@@ -25,7 +26,7 @@ FAILED_LOGIN_THRESHOLD = 3
 # --------------------------------------------------
 
 def read_log_file(file_path):
-    """Read the security log file."""
+    """Read the simulated security log file."""
 
     try:
         with open(file_path, "r", encoding="utf-8") as file:
@@ -33,6 +34,10 @@ def read_log_file(file_path):
 
     except FileNotFoundError:
         print(f"\n[ERROR] Log file not found: {file_path}")
+        return []
+
+    except OSError as error:
+        print(f"\n[ERROR] Unable to read log file: {error}")
         return []
 
 
@@ -46,7 +51,7 @@ def parse_log_line(line):
 
     Example:
     2026-10-03 08:14:02 WARNING LOGIN_FAILED
-    user=admin ip=203.0.113.25
+    user=admin ip=EXTERNAL-A
     """
 
     line = line.strip()
@@ -81,6 +86,26 @@ def parse_log_line(line):
 
 
 # --------------------------------------------------
+# GET NETWORK SOURCE
+# --------------------------------------------------
+
+def get_network_source(log):
+    """
+    Return the masked network source from a log entry.
+
+    The sample log currently uses the key 'ip',
+    but all values are masked labels such as
+    EXTERNAL-A or INTERNAL-B.
+    """
+
+    return (
+        log["data"].get("source")
+        or log["data"].get("ip")
+        or "Unknown"
+    )
+
+
+# --------------------------------------------------
 # ANALYSE LOGS
 # --------------------------------------------------
 
@@ -88,7 +113,7 @@ def analyse_logs(lines):
 
     severity_counter = Counter()
     event_counter = Counter()
-    ip_counter = Counter()
+    source_counter = Counter()
 
     failed_login_counter = Counter()
     access_denied_counter = Counter()
@@ -110,8 +135,7 @@ def analyse_logs(lines):
 
         severity = log["severity"]
         event = log["event"]
-
-        ip_address = log["data"].get("ip")
+        network_source = get_network_source(log)
 
 
         # Count severity types
@@ -124,37 +148,41 @@ def analyse_logs(lines):
         event_counter[event] += 1
 
 
-        # Count IP activity
+        # Count network source activity
 
-        if ip_address:
-            ip_counter[ip_address] += 1
-
-
-        # Failed logins
-
-        if event == "LOGIN_FAILED" and ip_address:
-
-            failed_login_counter[ip_address] += 1
+        if network_source != "Unknown":
+            source_counter[network_source] += 1
 
 
-        # Access denied events
+        # Failed login activity
 
-        if event == "ACCESS_DENIED" and ip_address:
+        if (
+            event == "LOGIN_FAILED"
+            and network_source != "Unknown"
+        ):
 
-            access_denied_counter[ip_address] += 1
+            failed_login_counter[network_source] += 1
+
+
+        # Access denied activity
+
+        if (
+            event == "ACCESS_DENIED"
+            and network_source != "Unknown"
+        ):
+
+            access_denied_counter[network_source] += 1
 
 
         # Malware alerts
 
         if event == "MALWARE_ALERT":
-
             malware_alerts.append(log)
 
 
         # Port scan alerts
 
         if event == "PORT_SCAN":
-
             port_scans.append(log)
 
 
@@ -162,7 +190,7 @@ def analyse_logs(lines):
         "logs": parsed_logs,
         "severity": severity_counter,
         "events": event_counter,
-        "ips": ip_counter,
+        "sources": source_counter,
         "failed_logins": failed_login_counter,
         "access_denied": access_denied_counter,
         "malware": malware_alerts,
@@ -181,40 +209,44 @@ def detect_threats(results):
 
     # Repeated failed logins
 
-    for ip_address, count in results["failed_logins"].items():
+    for network_source, count in results["failed_logins"].items():
 
         if count >= FAILED_LOGIN_THRESHOLD:
 
             threats.append({
                 "severity": "HIGH",
                 "type": "Repeated Failed Logins",
-                "ip": ip_address,
-                "details": f"{count} failed login attempts detected"
+                "source": network_source,
+                "details": (
+                    f"{count} failed login attempts detected"
+                )
             })
 
 
-    # Repeated access denied
+    # Repeated access denied activity
 
-    for ip_address, count in results["access_denied"].items():
+    for network_source, count in results["access_denied"].items():
 
-        if count >= 3:
+        if count >= ACCESS_DENIED_THRESHOLD:
 
             threats.append({
                 "severity": "MEDIUM",
                 "type": "Repeated Access Denied",
-                "ip": ip_address,
-                "details": f"{count} access denied events detected"
+                "source": network_source,
+                "details": (
+                    f"{count} access denied events detected"
+                )
             })
 
 
-    # Malware
+    # Malware alerts
 
     for alert in results["malware"]:
 
         threats.append({
             "severity": "CRITICAL",
             "type": "Malware Alert",
-            "ip": alert["data"].get("ip", "Unknown"),
+            "source": get_network_source(alert),
             "details": (
                 f"Suspicious file: "
                 f"{alert['data'].get('file', 'Unknown')}"
@@ -222,14 +254,14 @@ def detect_threats(results):
         })
 
 
-    # Port scans
+    # Port scan alerts
 
     for scan in results["port_scans"]:
 
         threats.append({
             "severity": "HIGH",
             "type": "Port Scan",
-            "ip": scan["data"].get("ip", "Unknown"),
+            "source": get_network_source(scan),
             "details": (
                 f"Ports scanned: "
                 f"{scan['data'].get('ports', 'Unknown')}"
@@ -241,10 +273,10 @@ def detect_threats(results):
 
 
 # --------------------------------------------------
-# DISPLAY RESULTS
+# DISPLAY SECURITY SUMMARY
 # --------------------------------------------------
 
-def display_results(results, threats):
+def display_summary(results):
 
     print("\n" + "=" * 60)
 
@@ -255,6 +287,7 @@ def display_results(results, threats):
 
     print("\nSECURITY SUMMARY")
     print("-" * 60)
+
 
     print(
         f"Total log entries: "
@@ -287,20 +320,35 @@ def display_results(results, threats):
     )
 
 
-    # Most active IPs
+# --------------------------------------------------
+# DISPLAY MOST ACTIVE SOURCES
+# --------------------------------------------------
 
-    print("\nMOST ACTIVE IP ADDRESSES")
+def display_active_sources(results):
+
+    print("\nMOST ACTIVE NETWORK SOURCES")
     print("-" * 60)
 
-    for ip_address, count in results["ips"].most_common(5):
+
+    if not results["sources"]:
+
+        print("No network source activity found.")
+        return
+
+
+    for network_source, count in results["sources"].most_common(5):
 
         print(
-            f"{ip_address:<18} "
+            f"{network_source:<18} "
             f"{count} events"
         )
 
 
-    # Threats
+# --------------------------------------------------
+# DISPLAY SECURITY ALERTS
+# --------------------------------------------------
+
+def display_alerts(threats):
 
     print("\nSECURITY ALERTS")
     print("-" * 60)
@@ -309,30 +357,44 @@ def display_results(results, threats):
     if not threats:
 
         print("No suspicious activity detected.")
+        return
 
-    else:
 
-        for threat in threats:
+    for threat in threats:
 
-            print(
-                f"[{threat['severity']}] "
-                f"{threat['type']}"
-            )
+        print(
+            f"[{threat['severity']}] "
+            f"{threat['type']}"
+        )
 
-            print(
-                f"IP: {threat['ip']}"
-            )
+        print(
+            f"Network Source: "
+            f"{threat['source']}"
+        )
 
-            print(
-                f"Details: "
-                f"{threat['details']}"
-            )
+        print(
+            f"Details: "
+            f"{threat['details']}"
+        )
 
-            print("-" * 60)
+        print("-" * 60)
 
 
 # --------------------------------------------------
-# CREATE REPORT
+# DISPLAY RESULTS
+# --------------------------------------------------
+
+def display_results(results, threats):
+
+    display_summary(results)
+
+    display_active_sources(results)
+
+    display_alerts(threats)
+
+
+# --------------------------------------------------
+# CREATE SECURITY REPORT
 # --------------------------------------------------
 
 def create_report(results, threats):
@@ -343,123 +405,149 @@ def create_report(results, threats):
     )
 
 
-    with open(
-        REPORT_FILE,
-        "w",
-        encoding="utf-8"
-    ) as report:
+    try:
 
+        with open(
+            REPORT_FILE,
+            "w",
+            encoding="utf-8"
+        ) as report:
 
-        report.write(
-            "PYTHON SECURITY LOG ANALYZER REPORT\n"
-        )
-
-        report.write(
-            "=" * 60 + "\n\n"
-        )
-
-
-        report.write(
-            "SECURITY SUMMARY\n"
-        )
-
-        report.write(
-            "-" * 60 + "\n"
-        )
-
-
-        report.write(
-            f"Total log entries: "
-            f"{len(results['logs'])}\n"
-        )
-
-        report.write(
-            f"Successful logins: "
-            f"{results['events'].get('LOGIN_SUCCESS', 0)}\n"
-        )
-
-        report.write(
-            f"Failed logins: "
-            f"{results['events'].get('LOGIN_FAILED', 0)}\n"
-        )
-
-        report.write(
-            f"Access denied: "
-            f"{results['events'].get('ACCESS_DENIED', 0)}\n"
-        )
-
-        report.write(
-            f"Warnings: "
-            f"{results['severity'].get('WARNING', 0)}\n"
-        )
-
-        report.write(
-            f"Errors: "
-            f"{results['severity'].get('ERROR', 0)}\n"
-        )
-
-
-        report.write(
-            "\nMOST ACTIVE IP ADDRESSES\n"
-        )
-
-        report.write(
-            "-" * 60 + "\n"
-        )
-
-
-        for ip_address, count in results["ips"].most_common(5):
 
             report.write(
-                f"{ip_address}: "
-                f"{count} events\n"
+                "PYTHON SECURITY LOG ANALYZER REPORT\n"
+            )
+
+            report.write(
+                "=" * 60 + "\n\n"
             )
 
 
-        report.write(
-            "\nSECURITY ALERTS\n"
-        )
-
-        report.write(
-            "-" * 60 + "\n"
-        )
-
-
-        if not threats:
+            # Security summary
 
             report.write(
-                "No suspicious activity detected.\n"
+                "SECURITY SUMMARY\n"
             )
 
-        else:
+            report.write(
+                "-" * 60 + "\n"
+            )
 
-            for threat in threats:
+            report.write(
+                f"Total log entries: "
+                f"{len(results['logs'])}\n"
+            )
+
+            report.write(
+                f"Successful logins: "
+                f"{results['events'].get('LOGIN_SUCCESS', 0)}\n"
+            )
+
+            report.write(
+                f"Failed logins: "
+                f"{results['events'].get('LOGIN_FAILED', 0)}\n"
+            )
+
+            report.write(
+                f"Access denied: "
+                f"{results['events'].get('ACCESS_DENIED', 0)}\n"
+            )
+
+            report.write(
+                f"Warnings: "
+                f"{results['severity'].get('WARNING', 0)}\n"
+            )
+
+            report.write(
+                f"Errors: "
+                f"{results['severity'].get('ERROR', 0)}\n"
+            )
+
+
+            # Active sources
+
+            report.write(
+                "\nMOST ACTIVE NETWORK SOURCES\n"
+            )
+
+            report.write(
+                "-" * 60 + "\n"
+            )
+
+
+            if not results["sources"]:
 
                 report.write(
-                    f"\nSeverity: "
-                    f"{threat['severity']}\n"
+                    "No network source activity found.\n"
                 )
+
+            else:
+
+                for (
+                    network_source,
+                    count
+                ) in results["sources"].most_common(5):
+
+                    report.write(
+                        f"{network_source}: "
+                        f"{count} events\n"
+                    )
+
+
+            # Security alerts
+
+            report.write(
+                "\nSECURITY ALERTS\n"
+            )
+
+            report.write(
+                "-" * 60 + "\n"
+            )
+
+
+            if not threats:
 
                 report.write(
-                    f"Alert: "
-                    f"{threat['type']}\n"
+                    "No suspicious activity detected.\n"
                 )
 
-                report.write(
-                    f"IP Address: "
-                    f"{threat['ip']}\n"
-                )
+            else:
 
-                report.write(
-                    f"Details: "
-                    f"{threat['details']}\n"
-                )
+                for threat in threats:
+
+                    report.write(
+                        f"\nSeverity: "
+                        f"{threat['severity']}\n"
+                    )
+
+                    report.write(
+                        f"Alert: "
+                        f"{threat['type']}\n"
+                    )
+
+                    report.write(
+                        f"Network Source: "
+                        f"{threat['source']}\n"
+                    )
+
+                    report.write(
+                        f"Details: "
+                        f"{threat['details']}\n"
+                    )
 
 
-    print(
-        f"\nReport created:"
-        f"\n{REPORT_FILE}"
-    )
+        print(
+            f"\nReport created:"
+            f"\n{REPORT_FILE}"
+        )
+
+
+    except OSError as error:
+
+        print(
+            f"\n[ERROR] "
+            f"Unable to create report: {error}"
+        )
 
 
 # --------------------------------------------------
@@ -469,7 +557,7 @@ def create_report(results, threats):
 def main():
 
     print(
-        "\nLoading security logs..."
+        "\nLoading simulated security logs..."
     )
 
 
@@ -479,6 +567,11 @@ def main():
 
 
     if not lines:
+
+        print(
+            "\nNo log entries available for analysis."
+        )
+
         return
 
 
