@@ -364,12 +364,12 @@ Details: Multiple ports scanned
 ```
 
 ---
-
 ## 📸 Screenshot
 
 ### Security Analyzer Running in VS Code
 
 ![Python Security Log Analyzer](security-analyzer-output.png)
+
 ---
 
 ## 🧠 Python Concepts Demonstrated
