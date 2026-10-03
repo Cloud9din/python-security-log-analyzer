@@ -369,20 +369,11 @@ Details: Multiple ports scanned
 
 ### Security Analyzer Running in VS Code
 
-Upload a screenshot using:
+## 📸 Screenshot
 
-```text
-security-analyzer-output.png
-```
+### Security Analyzer Output
 
-Then display it with:
-
-```markdown
-![Python Security Log Analyzer Terminal Output](security-analyzer-output.png)
-```
-
-> Before uploading screenshots, make sure any network addresses or other sensitive-looking information are hidden or masked.
-
+![Python Security Log Analyzer](security-analyzer-output.png)
 ---
 
 ## 🧠 Python Concepts Demonstrated
