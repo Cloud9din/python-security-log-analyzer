@@ -10,7 +10,7 @@ Access denied: 4
 Warnings: 16
 Errors: 5
 
-MOST ACTIVE IP ADDRESSES
+MOST ACTIVE NETWORK SOURCES
 ------------------------------------------------------------
 EXTERNAL-A: 5 events
 EXTERNAL-E: 4 events
@@ -23,35 +23,35 @@ SECURITY ALERTS
 
 Severity: HIGH
 Alert: Repeated Failed Logins
-IP Address: EXTERNAL-A
+Network Source: EXTERNAL-A
 Details: 5 failed login attempts detected
 
 Severity: HIGH
 Alert: Repeated Failed Logins
-IP Address: EXTERNAL-C
+Network Source: EXTERNAL-C
 Details: 3 failed login attempts detected
 
 Severity: HIGH
 Alert: Repeated Failed Logins
-IP Address: EXTERNAL-E
+Network Source: EXTERNAL-E
 Details: 4 failed login attempts detected
 
 Severity: MEDIUM
 Alert: Repeated Access Denied
-IP Address: EXTERNAL-B
+Network Source: EXTERNAL-B
 Details: 3 access denied events detected
 
 Severity: CRITICAL
 Alert: Malware Alert
-IP Address: INTERNAL-E
+Network Source: INTERNAL-E
 Details: Suspicious file: suspicious.exe
 
 Severity: HIGH
 Alert: Port Scan
-IP Address: EXTERNAL-F
+Network Source: EXTERNAL-F
 Details: Ports scanned: 22,80,443,3389
 
 Severity: HIGH
 Alert: Port Scan
-IP Address: EXTERNAL-F
+Network Source: EXTERNAL-F
 Details: Ports scanned: 21,23,25,445
