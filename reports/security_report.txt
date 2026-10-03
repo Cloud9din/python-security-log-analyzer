@@ -1,0 +1,57 @@
+PYTHON SECURITY LOG ANALYZER REPORT
+============================================================
+
+SECURITY SUMMARY
+------------------------------------------------------------
+Total log entries: 27
+Successful logins: 4
+Failed logins: 12
+Access denied: 4
+Warnings: 16
+Errors: 5
+
+MOST ACTIVE IP ADDRESSES
+------------------------------------------------------------
+203.0.113.25: 5 events
+198.51.100.91: 4 events
+198.51.100.44: 3 events
+198.51.100.75: 3 events
+203.0.113.80: 3 events
+
+SECURITY ALERTS
+------------------------------------------------------------
+
+Severity: HIGH
+Alert: Repeated Failed Logins
+IP Address: 203.0.113.25
+Details: 5 failed login attempts detected
+
+Severity: HIGH
+Alert: Repeated Failed Logins
+IP Address: 198.51.100.75
+Details: 3 failed login attempts detected
+
+Severity: HIGH
+Alert: Repeated Failed Logins
+IP Address: 198.51.100.91
+Details: 4 failed login attempts detected
+
+Severity: MEDIUM
+Alert: Repeated Access Denied
+IP Address: 198.51.100.44
+Details: 3 access denied events detected
+
+Severity: CRITICAL
+Alert: Malware Alert
+IP Address: 192.168.1.55
+Details: Suspicious file: suspicious.exe
+
+Severity: HIGH
+Alert: Port Scan
+IP Address: 203.0.113.110
+Details: Ports scanned: 22,80,443,3389
+
+Severity: HIGH
+Alert: Port Scan
+IP Address: 203.0.113.110
+Details: Ports scanned: 21,23,25,445
